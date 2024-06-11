@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -29,20 +30,24 @@ func GenerateJWT(id int, name, phone string) (string, error) {
 }
 
 func ValidateJWT(tokenString string) (jwt.MapClaims, error) {
+	if strings.HasPrefix(tokenString, "Bearer ") {
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, &CustomValidationError{Msg: "unexpected signing method"}
+			return nil, &CustomValidationError{Msg: "Invalid token"}
 		}
 		return jwtSecret, nil
 	})
 
 	if err != nil || !token.Valid {
-		return nil, &CustomValidationError{Msg: "invalid token"}
+		return nil, &CustomValidationError{Msg: "Invalid token"}
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, &CustomValidationError{Msg: "invalid claims"}
+		return nil, &CustomValidationError{Msg: "Invalid token"}
 	}
 
 	return claims, nil

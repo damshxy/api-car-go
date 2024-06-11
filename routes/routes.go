@@ -6,4 +6,5 @@ func InitRoutes(e *echo.Echo) {
 	apiGroup := e.Group("/api")
 
 	AuthRoutes(apiGroup)
+	CarRoutes(apiGroup)
 }

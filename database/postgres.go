@@ -29,6 +29,7 @@ func InitDB() {
 
 	if err = DB.AutoMigrate(
 		&models.User{},
+		&models.Car{},
 	); err != nil {
 		panic("failed to migrate database")
 	}
