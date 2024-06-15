@@ -6,17 +6,20 @@ import (
 	dtos "github.com/damshxy/api-car-go/dto"
 	"github.com/damshxy/api-car-go/helpers"
 	"github.com/damshxy/api-car-go/services"
+	"github.com/damshxy/api-car-go/usecase"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
-	AuthService services.AuthService
-	Validator *helpers.CustomValidator
+	UserUsecase   usecase.UserUsecase
+	LoggerService services.LoggerService
+	Validator     *helpers.CustomValidator
 }
 
-func NewAuthHandler(authService services.AuthService) *AuthHandler {
-	return &AuthHandler{
-		AuthService: authService,
+func NewAuthHandler(userUsecase usecase.UserUsecase, loggerService services.LoggerService) *AuthHandler {
+	return &AuthHandler {
+		UserUsecase: userUsecase,
+		LoggerService: loggerService,
 	}
 }
 
@@ -34,16 +37,19 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
-	user, err := h.AuthService.Register(req)
+	user, err := h.UserUsecase.Register(&req)
 	if err != nil {
+		h.LoggerService.Error("Failed to register user: " + err.Error())
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": "internal server error",
 		})
 	}
 
+	h.LoggerService.Info("User registered: " + user.Name)
+
 	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success register user",
-		"user":    user,
+		"message": "Success register user",
+		"user": user,
 	})
 }
 
@@ -61,15 +67,17 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		})
 	}
 
-	userLogin, err := h.AuthService.Login(req)
+	userLogin, err := h.UserUsecase.Login(&req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": "internal server error",
 		})
 	}
 
+	h.LoggerService.Info("User logged in: " + userLogin.Name)
+
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success login user",
-		"user":    userLogin,
+		"user": userLogin,
 	})
 }

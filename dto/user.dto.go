@@ -1,7 +1,5 @@
 package dtos
 
-import "github.com/damshxy/api-car-go/models"
-
 type RegisterRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Phone    string `json:"phone" validate:"required"`
@@ -14,6 +12,8 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-	User  *models.User `json:"user"`
+	ID int `json:"id"`
+	Name string `json:"name"`
+	Phone string `json:"phone"`
 	Token string  `json:"token"`
 }
