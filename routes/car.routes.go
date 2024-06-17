@@ -6,13 +6,15 @@ import (
 	"github.com/damshxy/api-car-go/middlewares"
 	"github.com/damshxy/api-car-go/repository"
 	"github.com/damshxy/api-car-go/services"
+	"github.com/damshxy/api-car-go/usecase"
 	"github.com/labstack/echo/v4"
 )
 
 func CarRoutes(e *echo.Group) {
 	carRepo := repository.NewCarRepository(database.DB)
-	carService := services.NewCarServices(carRepo)
-	handlerCar := handlers.NewCarHandler(carService)
+	loggerService := services.NewLoggerService()
+	carUsecase := usecase.NewCarUsecase(carRepo)
+	handlerCar := handlers.NewCarHandler(carUsecase, loggerService)
 
 	e.GET("/cars", handlerCar.GetAll, middlewares.JWTMiddleware)
 	e.GET("/car/:id", handlerCar.GetById, middlewares.JWTMiddleware)

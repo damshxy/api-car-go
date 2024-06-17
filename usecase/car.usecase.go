@@ -1,4 +1,4 @@
-package services
+package usecase
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"github.com/damshxy/api-car-go/repository"
 )
 
-type CarService interface {
+type CarUsecase interface {
 	GetAll(token string) ([]*dtos.CarResponse, error)
 	GetById(id uint, token string) (*dtos.CarResponse, error)
 	Create(req dtos.CarRequest, token string) (*dtos.CarResponse, error)
@@ -17,40 +17,36 @@ type CarService interface {
 	Delete(id uint, token string) error
 }
 
-type carService struct {
-	repo repository.CarRepository
+type carUsecase struct {
+	carRepository repository.CarRepository
 }
 
-func NewCarServices(repo repository.CarRepository) CarService {
-	return &carService{
-		repo: repo,
+func NewCarUsecase(carRepository repository.CarRepository) CarUsecase {
+	return &carUsecase{
+		carRepository: carRepository,
 	}
 }
 
-func (s *carService) GetAll(token string) ([]*dtos.CarResponse, error) {
-	// Get the owner ID from the token
+func (c *carUsecase) GetAll(token string) ([]*dtos.CarResponse, error) {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
 		return []*dtos.CarResponse{}, err
 	}
 
-	// Convert the owner ID to an int
-	ownerID := int(claims["id"].(float64))
+	ownerID := claims["id"].(float64)
 
-	// Get all cars for the owner
-	cars, err := s.repo.GetAll()
+	cars, err := c.carRepository.GetAll()
 	if err != nil {
 		return []*dtos.CarResponse{}, err
 	}
 
-	// Filter cars by owner ID
-	carResponses := []*dtos.CarResponse{}
+	carResponses := []*dtos.CarResponse {}
 	for _, car := range cars {
 		carResponse := dtos.CarResponse{
 			ID: car.ID,
 			NameCar: car.NameCar,
 			PlateNumber: car.PlateNumber,
-			OwnerID: ownerID,
+			OwnerID: int(ownerID),
 		}
 		carResponses = append(carResponses, &carResponse)
 	}
@@ -58,64 +54,56 @@ func (s *carService) GetAll(token string) ([]*dtos.CarResponse, error) {
 	return carResponses, nil
 }
 
-func (s *carService) GetById(id uint, token string) (*dtos.CarResponse, error) {
-	// Get the owner ID from the token
+func (c *carUsecase) GetById(id uint, token string) (*dtos.CarResponse, error) {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	// Convert the owner ID to an int
-	ownerID := int(claims["id"].(float64))
+	ownerID := claims["id"].(float64)
 
-	// Get the car by ID
-	car, err := s.repo.GetById(id)
+	car, err := c.carRepository.GetById(id)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	// Check if the car belongs to the owner
-	if car.OwnerID != ownerID {
+	if car.OwnerID != int(ownerID) {
 		return &dtos.CarResponse{}, errors.New("unauthorized")
 	}
 
-	// Create the car response
 	carResponse := dtos.CarResponse{
 		ID: car.ID,
 		NameCar: car.NameCar,
 		PlateNumber: car.PlateNumber,
-		OwnerID: ownerID,
+		OwnerID: int(ownerID),
 	}
 
 	return &carResponse, nil
 }
 
-func (s *carService) Create(req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
-	// Get the owner ID from the token
+func (c *carUsecase) Create(req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	// Convert the owner ID to an int
 	ownerID := claims["id"].(float64)
 
-	// Create the car
 	car := models.Car{
 		NameCar: req.NameCar,
 		PlateNumber: req.PlateNumber,
 	}
 
-	// Set the owner ID
 	car.OwnerID = int(ownerID)
+	if car.OwnerID != int(ownerID) {
+		return &dtos.CarResponse{}, errors.New("unauthorized")
+	}
 
-	// save the car to the database
-	createdCar, err := s.repo.Create(&car)
+	createdCar, err := c.carRepository.Create(&car)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	// Create the car response
 	carResponse := dtos.CarResponse{
 		ID: createdCar.ID,
 		NameCar: createdCar.NameCar,
@@ -126,18 +114,15 @@ func (s *carService) Create(req dtos.CarRequest, token string) (*dtos.CarRespons
 	return &carResponse, nil
 }
 
-func (s *carService) Update(id uint, req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
-	// Get the owner ID from the token
-	claims, err :=helpers.ValidateJWT(token)
+func (c *carUsecase) Update(id uint, req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
+	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	// Convert the owner ID to an int
 	ownerID := claims["id"].(float64)
 
-	// Get the car by ID
-	car, err := s.repo.GetById(id)
+	car, err := c.carRepository.GetById(id)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
@@ -145,13 +130,12 @@ func (s *carService) Update(id uint, req dtos.CarRequest, token string) (*dtos.C
 	car.NameCar = req.NameCar
 	car.PlateNumber = req.PlateNumber
 
-	// Check if the car belongs to the owner
-	updatedCar, err := s.repo.Update(car)
+	updatedCar, err := c.carRepository.Update(car)
 	if err != nil {
 		return &dtos.CarResponse{}, err
 	}
 
-	carResponse := dtos.CarResponse{
+	carResponse := dtos.CarResponse {
 		ID: updatedCar.ID,
 		NameCar: updatedCar.NameCar,
 		PlateNumber: updatedCar.PlateNumber,
@@ -161,7 +145,7 @@ func (s *carService) Update(id uint, req dtos.CarRequest, token string) (*dtos.C
 	return &carResponse, nil
 }
 
-func (s *carService) Delete(id uint, token string) error {
+func (c *carUsecase) Delete(id uint, token string) error {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
 		return err
@@ -169,7 +153,7 @@ func (s *carService) Delete(id uint, token string) error {
 
 	ownerID := claims["id"].(float64)
 
-	car, err := s.repo.GetById(id)
+	car, err := c.carRepository.GetById(id)
 	if err != nil {
 		return err
 	}
@@ -178,5 +162,5 @@ func (s *carService) Delete(id uint, token string) error {
 		return errors.New("unauthorized")
 	}
 
-	return s.repo.Delete(id)
+	return c.carRepository.Delete(id)
 }

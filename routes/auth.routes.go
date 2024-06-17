@@ -13,7 +13,7 @@ func AuthRoutes(e *echo.Group) {
 	auth := e.Group("/auth")
 
 	userRepo := repository.NewUserRepository(database.DB)
-	loggerService := services.NewLoggerService() // Assuming NewLoggerService creates a new instance with necessary configuration
+	loggerService := services.NewLoggerService()
 	userUseCase := usecase.NewUserUsecase(userRepo)
 	handlerAuth := handlers.NewAuthHandler(userUseCase, loggerService)
 	
