@@ -64,14 +64,14 @@ func (c *carUsecase) GetById(id uint, token string) (*dtos.CarResponse, error) {
 
 	car, err := c.carRepository.GetById(id)
 	if err != nil {
-		return &dtos.CarResponse{}, err
+		return &dtos.CarResponse{}, errors.New("car not found")
 	}
 
 	if car.OwnerID != int(ownerID) {
 		return &dtos.CarResponse{}, errors.New("unauthorized")
 	}
 
-	carResponse := dtos.CarResponse{
+	carResponse := dtos.CarResponse {
 		ID: car.ID,
 		NameCar: car.NameCar,
 		PlateNumber: car.PlateNumber,

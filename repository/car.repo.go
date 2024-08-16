@@ -34,7 +34,7 @@ func (r *carRepository) Create(car *models.Car) (*models.Car, error) {
 func (r *carRepository) GetAll() ([]*models.Car, error) {
 	var cars []*models.Car
 	
-	if err := r.db.Find(&cars).Error; err != nil {
+	if err := r.db.Order("id").Find(&cars).Error; err != nil {
 		return nil, err
 	}
 
@@ -59,5 +59,13 @@ func (r *carRepository) Update(car *models.Car) (*models.Car, error) {
 }
 
 func (r *carRepository) Delete(id uint) error {
-	return r.db.Where("id = ?", id).Delete(&models.Car{}).Error
+	car := models.Car{
+		ID: id,
+	}
+
+	if err := r.db.Delete(&car).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

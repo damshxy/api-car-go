@@ -40,7 +40,7 @@ func (h *CarHandler) GetAll(c echo.Context) error {
 		})
 	}
 
-	h.logger.Info("Success get cars" + strconv.Itoa(len(cars)))
+	h.logger.Info("Success get cars total " + strconv.Itoa(len(cars)))
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success get cars",
@@ -65,13 +65,16 @@ func (h *CarHandler) GetById(c echo.Context) error {
 		})
 	}
 
+
 	car, err := h.CarUsecase.GetById(uint(id), token)
 	if err != nil {
+		h.logger.Error("Failed to get car by id: " + err.Error())
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": "internal server error",
 		})
 	}
 
+	h.logger.Info("Success get car by id " + strconv.Itoa(int(car.ID)))
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success get car",
 		"car":     car,
@@ -165,12 +168,14 @@ func (h *CarHandler) Update(c echo.Context) error {
 func (h *CarHandler) Delete(c echo.Context) error {
 	token := c.Request().Header.Get("Authorization")
 	if token == "" {
+		h.logger.Error("Token is empty")
 		return c.JSON(http.StatusUnauthorized, echo.Map{
 			"message": "unauthorized",
 		})
 	}
 
 	idStr := c.Param("id")
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		h.logger.Error("Invalid id: " + err.Error())
@@ -179,14 +184,14 @@ func (h *CarHandler) Delete(c echo.Context) error {
 		})
 	}
 
-	err = h.CarUsecase.Delete(uint(id), token)
-	if err != nil {
+	if err := h.CarUsecase.Delete(uint(id), token); err != nil {
 		h.logger.Error("Failed to delete car: " + err.Error())
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "failed to delete car",
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"message": "internal server error",
 		})
 	}
 
+	h.logger.Info("Car deleted by id: " + idStr)
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "success delete car",
 	})

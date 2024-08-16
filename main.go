@@ -1,23 +1,19 @@
 package main
 
 import (
-	"log"
-
+	"github.com/damshxy/api-car-go/config"
 	"github.com/damshxy/api-car-go/database"
 	"github.com/damshxy/api-car-go/routes"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
+	cfg := config.LoadConfig() 
+
 	e := echo.New()
 
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
 	// Database
-	database.InitDB()
+	database.LoadDatabasePG(cfg)
 
 	// Routes
 	routes.InitRoutes(e)

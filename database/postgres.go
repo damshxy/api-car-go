@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/damshxy/api-car-go/config"
 	"github.com/damshxy/api-car-go/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -11,16 +11,16 @@ import (
 
 var DB *gorm.DB
 
-func InitDB() {
+func LoadDatabasePG(c *config.Config) {
 	var err error
-	
-	pgHost := os.Getenv("PG_HOST")
-	pgPort := os.Getenv("PG_PORT")
-	pgUser := os.Getenv("PG_USERNAME")
-	pgPass := os.Getenv("PG_PASSWORD")
-	pgDB := os.Getenv("PG_DB")
 
-	dsn := fmt.Sprintf( "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", pgHost, pgUser, pgPass, pgDB, pgPort)
+	dsn := fmt.Sprintf( "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		c.PGHost,
+		c.PGUser,
+		c.PGPass,
+		c.PGDBName,
+		c.PGPort,
+	)
 
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
