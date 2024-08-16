@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/damshxy/api-car-go/config"
 	"github.com/damshxy/api-car-go/database"
-	"github.com/damshxy/api-car-go/routes"
+	"github.com/damshxy/api-car-go/internal/handlers/http/routes"
 	"github.com/labstack/echo/v4"
 )
 

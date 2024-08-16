@@ -2,17 +2,17 @@ package routes
 
 import (
 	"github.com/damshxy/api-car-go/database"
-	"github.com/damshxy/api-car-go/handlers"
+	handlers "github.com/damshxy/api-car-go/internal/handlers/http"
+	"github.com/damshxy/api-car-go/internal/repository"
+	"github.com/damshxy/api-car-go/internal/usecase"
 	"github.com/damshxy/api-car-go/middlewares"
-	"github.com/damshxy/api-car-go/repository"
-	"github.com/damshxy/api-car-go/services"
-	"github.com/damshxy/api-car-go/usecase"
+	"github.com/damshxy/api-car-go/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
 func CarRoutes(e *echo.Group) {
 	carRepo := repository.NewCarRepository(database.DB)
-	loggerService := services.NewLoggerService()
+	loggerService := logger.NewLoggerService()
 	carUsecase := usecase.NewCarUsecase(carRepo)
 	handlerCar := handlers.NewCarHandler(carUsecase, loggerService)
 

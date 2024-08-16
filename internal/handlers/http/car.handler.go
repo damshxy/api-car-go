@@ -4,20 +4,20 @@ import (
 	"net/http"
 	"strconv"
 
-	dtos "github.com/damshxy/api-car-go/dto"
-	"github.com/damshxy/api-car-go/helpers"
-	"github.com/damshxy/api-car-go/services"
-	"github.com/damshxy/api-car-go/usecase"
+	dtos "github.com/damshxy/api-car-go/internal/dto"
+	"github.com/damshxy/api-car-go/internal/usecase"
+	"github.com/damshxy/api-car-go/pkg/helpers"
+	"github.com/damshxy/api-car-go/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
 type CarHandler struct {
 	CarUsecase usecase.CarUsecase
-	logger     services.LoggerService
+	logger     logger.LoggerService
 	Validator *helpers.CustomValidator
 }
 
-func NewCarHandler(carUsecase usecase.CarUsecase, logger services.LoggerService) *CarHandler {
+func NewCarHandler(carUsecase usecase.CarUsecase, logger logger.LoggerService) *CarHandler {
 	return &CarHandler{
 		CarUsecase: carUsecase,
 		logger:     logger,

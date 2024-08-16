@@ -3,10 +3,10 @@ package usecase
 import (
 	"errors"
 
-	dtos "github.com/damshxy/api-car-go/dto"
-	"github.com/damshxy/api-car-go/helpers"
-	"github.com/damshxy/api-car-go/models"
-	"github.com/damshxy/api-car-go/repository"
+	dtos "github.com/damshxy/api-car-go/internal/dto"
+	"github.com/damshxy/api-car-go/pkg/helpers"
+	"github.com/damshxy/api-car-go/internal/models"
+	"github.com/damshxy/api-car-go/internal/repository"
 )
 
 type UserUsecase interface {

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/damshxy/api-car-go/helpers"
+	"github.com/damshxy/api-car-go/pkg/helpers"
 	"github.com/labstack/echo/v4"
 )
 

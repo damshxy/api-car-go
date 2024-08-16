@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/damshxy/api-car-go/models"
+	"github.com/damshxy/api-car-go/internal/models"
 	"gorm.io/gorm"
 )
 

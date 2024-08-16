@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/damshxy/api-car-go/config"
-	"github.com/damshxy/api-car-go/models"
+	"github.com/damshxy/api-car-go/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
