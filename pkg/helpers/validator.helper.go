@@ -16,6 +16,5 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	if cv == nil || cv.validator == nil {
 		return nil
 	}
-
 	return cv.validator.Struct(i)
 }

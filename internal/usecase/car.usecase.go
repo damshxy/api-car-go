@@ -7,160 +7,178 @@ import (
 	"github.com/damshxy/api-car-go/internal/models"
 	"github.com/damshxy/api-car-go/internal/repository"
 	"github.com/damshxy/api-car-go/pkg/helpers"
+	"github.com/damshxy/api-car-go/pkg/logger"
 )
 
 type CarUsecase interface {
-	GetAll(token string) ([]*dtos.CarResponse, error)
-	GetById(id uint, token string) (*dtos.CarResponse, error)
-	Create(req dtos.CarRequest, token string) (*dtos.CarResponse, error)
-	Update(id uint, req dtos.CarRequest, token string) (*dtos.CarResponse, error)
-	Delete(id uint, token string) error
+	CreateCar(req *dtos.CarRequest, token string) (*dtos.CarResponse, error)
+	FindAllCars(token string) ([]*dtos.CarResponse, error)
+	FindCarByID(id uint, token string) (*dtos.CarResponse, error)
+	UpdateCar(req *dtos.CarRequest, id uint, token string) (*dtos.CarResponse, error)
+	DeleteCar(id uint, token string) error
 }
 
 type carUsecase struct {
-	carRepository repository.CarRepository
+	repo repository.CarRepository
+	logger logger.LoggerService
 }
 
-func NewCarUsecase(carRepository repository.CarRepository) CarUsecase {
+func NewCarUsecase(repo repository.CarRepository) CarUsecase {
 	return &carUsecase{
-		carRepository: carRepository,
+		repo: repo,
 	}
 }
 
-func (c *carUsecase) GetAll(token string) ([]*dtos.CarResponse, error) {
+func (u *carUsecase) CreateCar(req *dtos.CarRequest, token string) (*dtos.CarResponse, error) {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
-		return []*dtos.CarResponse{}, err
+		u.logger.Error("Failed to validate JWT" + err.Error())
+		return nil, errors.New("failed to validate JWT")
 	}
 
-	ownerID := claims["id"].(float64)
+	userID := claims["id"].(float64)
 
-	cars, err := c.carRepository.GetAll()
-	if err != nil {
-		return []*dtos.CarResponse{}, err
-	}
-
-	carResponses := []*dtos.CarResponse {}
-	for _, car := range cars {
-		carResponse := dtos.CarResponse{
-			ID: car.ID,
-			NameCar: car.NameCar,
-			PlateNumber: car.PlateNumber,
-			OwnerID: int(ownerID),
-		}
-		carResponses = append(carResponses, &carResponse)
-	}
-
-	return carResponses, nil
-}
-
-func (c *carUsecase) GetById(id uint, token string) (*dtos.CarResponse, error) {
-	claims, err := helpers.ValidateJWT(token)
-	if err != nil {
-		return &dtos.CarResponse{}, err
-	}
-
-	ownerID := claims["id"].(float64)
-
-	car, err := c.carRepository.GetById(id)
-	if err != nil {
-		return &dtos.CarResponse{}, errors.New("car not found")
-	}
-
-	if car.OwnerID != int(ownerID) {
-		return &dtos.CarResponse{}, errors.New("unauthorized")
-	}
-
-	carResponse := dtos.CarResponse {
-		ID: car.ID,
-		NameCar: car.NameCar,
-		PlateNumber: car.PlateNumber,
-		OwnerID: int(ownerID),
-	}
-
-	return &carResponse, nil
-}
-
-func (c *carUsecase) Create(req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
-	claims, err := helpers.ValidateJWT(token)
-	if err != nil {
-		return &dtos.CarResponse{}, err
-	}
-
-	ownerID := claims["id"].(float64)
-
-	car := models.Car{
+	car := &models.Car{
 		NameCar: req.NameCar,
 		PlateNumber: req.PlateNumber,
+		OwnerID: uint(userID),
 	}
 
-	car.OwnerID = int(ownerID)
-	if car.OwnerID != int(ownerID) {
-		return &dtos.CarResponse{}, errors.New("unauthorized")
-	}
-
-	createdCar, err := c.carRepository.Create(&car)
+	createdCar, err := u.repo.Create(car)
 	if err != nil {
-		return &dtos.CarResponse{}, err
+		u.logger.Error("Failed to create car" + err.Error())
+		return nil, errors.New("failed to create car")
 	}
 
 	carResponse := dtos.CarResponse{
 		ID: createdCar.ID,
 		NameCar: createdCar.NameCar,
 		PlateNumber: createdCar.PlateNumber,
-		OwnerID: int(ownerID),
+		OwnerID: uint(userID),
 	}
 
 	return &carResponse, nil
 }
 
-func (c *carUsecase) Update(id uint, req dtos.CarRequest, token string) (*dtos.CarResponse, error) {
+func (u *carUsecase) FindAllCars(token string) ([]*dtos.CarResponse, error) {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
-		return &dtos.CarResponse{}, err
+		u.logger.Error("Failed to validate JWT" + err.Error())
+		return nil, errors.New("failed to validate JWT")
 	}
 
-	ownerID := claims["id"].(float64)
+	userID := claims["id"].(float64)
 
-	car, err := c.carRepository.GetById(id)
+	cars, err := u.repo.GetAll()
 	if err != nil {
-		return &dtos.CarResponse{}, err
+		u.logger.Error("Failed to get cars" + err.Error())
+		return nil, errors.New("failed to get cars")
+	}
+
+	carResponses := []*dtos.CarResponse{}
+	for _, car := range cars {
+		if car.OwnerID == uint(userID) {
+			carResponses = append(carResponses, &dtos.CarResponse{
+				ID: car.ID,
+				NameCar: car.NameCar,
+				PlateNumber: car.PlateNumber,
+				OwnerID: uint(userID),
+			})
+		}
+	}
+
+	return carResponses, nil
+}
+
+func (u *carUsecase) FindCarByID(id uint, token string) (*dtos.CarResponse, error) {
+	claims, err := helpers.ValidateJWT(token)
+	if err != nil {
+		u.logger.Error("Failed to validate JWT: " + err.Error())
+		return nil, errors.New("failed to validate JWT")
+	}
+
+	userID := claims["id"].(float64)
+
+	car, err := u.repo.FindByID(id)
+	if err != nil {
+		u.logger.Error("Failed to get car: " + err.Error())
+		return nil, errors.New("failed to get car")
+	}
+
+	if car.OwnerID != uint(userID) {
+		u.logger.Error("Unauthorized access: user does not own the car")
+		return nil, errors.New("unauthorized to access this car")
+	}
+
+	carResponse := &dtos.CarResponse{
+		ID: car.ID,
+		NameCar:     car.NameCar,
+		PlateNumber: car.PlateNumber,
+		OwnerID:     car.OwnerID,
+	}
+
+	return carResponse, nil
+}
+
+
+func (u *carUsecase) UpdateCar(req *dtos.CarRequest, id uint, token string) (*dtos.CarResponse, error) {
+	claims, err := helpers.ValidateJWT(token)
+	if err != nil {
+		u.logger.Error("Failed to validate JWT" + err.Error())
+		return nil, errors.New("failed to validate JWT")
+	}
+
+	userID := claims["id"].(float64)
+
+	car, err := u.repo.FindByID(id)
+	if err != nil {
+		u.logger.Error("Failed to get car" + err.Error())
+		return nil, errors.New("failed to get car")
+	}
+
+	if car.OwnerID != uint(userID) {
+		u.logger.Error("Unauthorized to update this car")
+		return nil, errors.New("unauthorized to update this car")
 	}
 
 	car.NameCar = req.NameCar
 	car.PlateNumber = req.PlateNumber
 
-	updatedCar, err := c.carRepository.Update(car)
+	updatedCar, err := u.repo.Update(car)
 	if err != nil {
-		return &dtos.CarResponse{}, err
+		u.logger.Error("Failed to update car" + err.Error())
+		return nil, errors.New("failed to update car")
 	}
 
-	carResponse := dtos.CarResponse {
+	carResponse := &dtos.CarResponse{
 		ID: updatedCar.ID,
 		NameCar: updatedCar.NameCar,
 		PlateNumber: updatedCar.PlateNumber,
-		OwnerID: int(ownerID),
+		OwnerID: uint(userID),
 	}
 
-	return &carResponse, nil
+	return carResponse, nil
 }
 
-func (c *carUsecase) Delete(id uint, token string) error {
+func (u *carUsecase) DeleteCar(id uint, token string) error {
 	claims, err := helpers.ValidateJWT(token)
 	if err != nil {
-		return err
+		u.logger.Error("Failed to validate JWT" + err.Error())
+		return errors.New("failed to validate JWT")
 	}
 
-	ownerID := claims["id"].(float64)
+	userID := claims["id"].(float64)
 
-	car, err := c.carRepository.GetById(id)
+	car, err := u.repo.FindByID(id)
 	if err != nil {
-		return err
+		u.logger.Error("Failed to get car" + err.Error())
+		return errors.New("failed to get car")
 	}
 
-	if car.OwnerID != int(ownerID) {
-		return errors.New("unauthorized")
+	if car.OwnerID != uint(userID) {
+		u.logger.Error("Unauthorized to delete this car")
+		return errors.New("unauthorized to delete this car")
 	}
 
-	return c.carRepository.Delete(id)
+	return u.repo.Delete(car)
 }

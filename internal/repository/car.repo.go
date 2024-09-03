@@ -7,10 +7,10 @@ import (
 
 type CarRepository interface {
 	Create(car *models.Car) (*models.Car, error)
-	GetAll() ([]*models.Car, error)
-	GetById(id uint) (*models.Car, error)
+	FindByID(id uint) (*models.Car, error)
 	Update(car *models.Car) (*models.Car, error)
-	Delete(id uint) error
+	GetAll() ([]*models.Car, error)
+	Delete(car *models.Car) error
 }
 
 type carRepository struct {
@@ -27,44 +27,42 @@ func (r *carRepository) Create(car *models.Car) (*models.Car, error) {
 	if err := r.db.Create(car).Error; err != nil {
 		return nil, err
 	}
+	return car, nil
+}
+
+
+func (r *carRepository) FindByID(id uint) (*models.Car, error) {
+	var car models.Car
+	if err := r.db.First(&car, id).Error; err != nil {
+		return nil, err
+	}
+	return &car, nil
+}
+
+
+func (r *carRepository) Update(car *models.Car) (*models.Car, error) {
+	err := r.db.Save(&car).Error
+	if err != nil {
+		return nil, err
+	}
 
 	return car, nil
 }
 
 func (r *carRepository) GetAll() ([]*models.Car, error) {
 	var cars []*models.Car
-	
-	if err := r.db.Order("id").Find(&cars).Error; err != nil {
+	err := r.db.Order("id").Find(&cars).Error
+	if err != nil {
 		return nil, err
 	}
 
 	return cars, nil
 }
 
-func (r *carRepository) GetById(id uint) (*models.Car, error) {
-	var car models.Car
-	if err := r.db.Where("id = ?", id).First(&car).Error; err != nil {
-		return nil, err
-	}
-
-	return &car, nil
-}
-
-func (r *carRepository) Update(car *models.Car) (*models.Car, error) {
-	if err := r.db.Save(car).Error; err != nil {
-		return nil, err
-	}
-
-	return car, nil
-}
-
-func (r *carRepository) Delete(id uint) error {
-	car := models.Car{
-		ID: id,
-	}
-
-	if err := r.db.Delete(&car).Error; err != nil {
-		return err
+func (r *carRepository) Delete(car *models.Car) error {
+	err := r.db.Delete(&car).Error
+	if err != nil {
+		return nil
 	}
 
 	return nil

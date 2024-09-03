@@ -1,20 +1,25 @@
 package helpers
 
 import (
-	"log"
+	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HashingPassword(p []byte) string {
-	password, err := bcrypt.GenerateFromPassword(p, bcrypt.DefaultCost)
+func HashPassword(password string) (string, error) {
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	return string(password)
+	return string(hashPassword), nil
 }
 
-func ComparePassword(hashedPassword, psw []byte) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(psw))
+func ComparePassword(hashedPassword, reqPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(reqPassword))
+	if err != nil {
+		return errors.New("credentials do not match")
+	}
+
+	return nil
 }

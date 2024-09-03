@@ -2,21 +2,22 @@ package main
 
 import (
 	"github.com/damshxy/api-car-go/config"
-	"github.com/damshxy/api-car-go/database"
-	"github.com/damshxy/api-car-go/internal/handlers/http/routes"
-	"github.com/labstack/echo/v4"
+	"github.com/damshxy/api-car-go/config/database"
+	"github.com/damshxy/api-car-go/internal/delivery/routes"
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
-	cfg := config.LoadConfig() 
+	app := fiber.New()
 
-	e := echo.New()
+	cfg := config.LoadConfig()
 
-	// Database
-	database.LoadDatabasePG(cfg)
+	// Connect to database
+	database.ConnectPostgres(cfg)
 
-	// Routes
-	routes.InitRoutes(e)
+	// Initilize routes
+	routes.InitilizeRoutes(app)
 
-	e.Logger.Fatal(e.Start(":5050"))
+	// Start server
+	app.Listen(":5050")
 }

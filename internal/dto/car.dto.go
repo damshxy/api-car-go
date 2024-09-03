@@ -9,5 +9,5 @@ type CarResponse struct {
 	ID uint `json:"id"`
 	NameCar string `json:"name_car"`
 	PlateNumber string `json:"plate_number"`
-	OwnerID int `json:"owner_id"`
+	OwnerID uint `json:"owner_id"`
 }
