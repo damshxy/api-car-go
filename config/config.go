@@ -7,31 +7,32 @@ import (
 )
 
 type Config struct {
-	PGHost   string
-	PGPort   string
-	PGUser   string
-	PGPass   string
-	PGDBName string
+	PGHOST string
+	PGPORT string
+	PGUSER string
+	PGPASSWORD string
+	PGDATABASE string
 }
 
 func LoadConfig() *Config {
-	if err := godotenv.Load(".env"); err != nil {
+	if err := godotenv.Load(); err != nil {
 		panic(err)
 	}
 
 	return &Config{
-		PGHost: getEnv("PG_HOST"),
-		PGPort: getEnv("PG_PORT"),
-		PGUser: getEnv("PG_USERNAME"),
-		PGPass: getEnv("PG_PASSWORD"),
-		PGDBName: getEnv("PG_DB"),
+		PGHOST: getEnv("PG_HOST"),
+		PGPORT: getEnv("PG_PORT"),
+		PGUSER: getEnv("PG_USERNAME"),
+		PGPASSWORD: getEnv("PG_PASSWORD"),
+		PGDATABASE: getEnv("PG_DATABASE"),
 	}
 }
 
 func getEnv(key string) string {
-	if val, ok := os.LookupEnv(key); ok {
+	val, ok := os.LookupEnv(key)
+	if ok {
 		return val
 	}
 
-	return ""
+	return val
 }

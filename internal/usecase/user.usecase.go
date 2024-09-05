@@ -4,64 +4,89 @@ import (
 	"errors"
 
 	dtos "github.com/damshxy/api-car-go/internal/dto"
-	"github.com/damshxy/api-car-go/pkg/helpers"
 	"github.com/damshxy/api-car-go/internal/models"
 	"github.com/damshxy/api-car-go/internal/repository"
+	"github.com/damshxy/api-car-go/pkg/helpers"
+	"github.com/damshxy/api-car-go/pkg/logger"
+	"gorm.io/gorm"
 )
 
 type UserUsecase interface {
-	Register(req *dtos.RegisterRequest) (*models.User, error)
+	Register(req *dtos.RegisterRequest) (*dtos.AuthResponse, error)
 	Login(req *dtos.LoginRequest) (*dtos.AuthResponse, error)
 }
 
 type userUsecase struct {
-	userRepository repository.UserRepository
+	userRepo repository.UserRepository
+	logger logger.LoggerService
 }
 
-func NewUserUsecase(userRepository repository.UserRepository) UserUsecase {
-    return &userUsecase{
-        userRepository: userRepository,
-    }
-}
+func NewUserUsecase(userRepo repository.UserRepository) UserUsecase {
+	return &userUsecase{
+		userRepo: userRepo,
+	}
+} 
 
-func (u *userUsecase) Register(req *dtos.RegisterRequest) (*models.User, error) {
-	hashPassword := helpers.HashingPassword([]byte(req.Password))
-
+func (u *userUsecase) Register(req *dtos.RegisterRequest) (*dtos.AuthResponse, error) {
+	hashPassword, err := helpers.HashPassword(req.Password)
+	if err != nil {
+		u.logger.Error("Failed to hash password" + err.Error())
+		return nil, errors.New("failed to hash password")
+	}
+	
 	user := &models.User{
 		Name: req.Name,
 		Phone: req.Phone,
-		Password: string(hashPassword),
+		Password: hashPassword,
 	}
 
-	createdUser, err := u.userRepository.Create(user)
+	createdUser, err := u.userRepo.Create(user)
 	if err != nil {
-		return &models.User{}, err
+		u.logger.Error("Failed to create user" + err.Error())
+		return nil, errors.New("failed to create user")
 	}
 
-	return createdUser, nil
+	authResponse := &dtos.AuthResponse{
+		ID: int(createdUser.ID),
+		Name: createdUser.Name,
+		Phone: createdUser.Phone,
+	}
+
+	return authResponse, nil
 }
 
 func (u *userUsecase) Login(req *dtos.LoginRequest) (*dtos.AuthResponse, error) {
-	user, err := u.userRepository.FindByPhone(req.Phone)
-    if err != nil {
-        return &dtos.AuthResponse{}, err
-    }
-	hashedPassword := helpers.ComparePassword([]byte(user.Password), []byte(req.Password))
-	if hashedPassword != nil {
-		return &dtos.AuthResponse{}, errors.New("invalid credentials")
-	}
-
-	token, err := helpers.GenerateJWT(int(user.ID), user.Name, user.Phone)
+	user, err := u.userRepo.FindByPhone(req.Phone)
 	if err != nil {
-		return &dtos.AuthResponse{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		u.logger.Error("Failed to find user" + err.Error())
+		return nil, errors.New("failed to find user")
 	}
 
-	response := &dtos.AuthResponse{
-        ID:    int(user.ID),
-        Name:  user.Name,
-        Phone: user.Phone,
-        Token: token,
-    }
+	if user.Password == "" {
+		u.logger.Error("user password is empty" + err.Error())
+		return nil, errors.New("invalid credentials")
+	}
 
-	return response, nil
+	if err := helpers.ComparePassword(user.Password, req.Password); err != nil {
+		u.logger.Error("Failed to compare password" + err.Error())
+		return nil, errors.New("failed to compare password")
+	}
+
+	token, err := helpers.GenerateJWT(user.ID, user.Name)
+	if err != nil {
+		u.logger.Error("Failed to generate token" + err.Error())
+		return nil, errors.New("failed to generate token")
+	}
+
+	authResponse := &dtos.AuthResponse{
+		ID: int(user.ID),
+		Name: user.Name,
+		Phone: user.Phone,
+		Token: token,
+	}
+
+	return authResponse, nil
 }

@@ -21,7 +21,8 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *models.User) (*models.User, error) {
-	if err := r.db.Create(user).Error; err != nil {
+	err := r.db.Create(&user).Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -30,7 +31,8 @@ func (r *userRepository) Create(user *models.User) (*models.User, error) {
 
 func (r *userRepository) FindByPhone(phone string) (*models.User, error) {
 	var user models.User
-	if err := r.db.Where("phone = ?", phone).First(&user).Error; err != nil {
+	err := r.db.Where("phone = ?", phone).First(&user).Error
+	if err != nil {
 		return nil, err
 	}
 
